@@ -24,11 +24,13 @@ class Game {
 
 		this.keys = new Set();
 		this.joystick = nipplejs.create({
-	        zone: document.getElementById('dynamic'),
-			mode: 'dynamic',
-			size: 100,
+	        zone: document.getElementById('static'),
+			mode: 'static',
+			position: {left: '50%', top: '50%'},
+			size: 50,
 	        color: 'blue'
 	    });
+		document.getElementById('static').style += isMobile ? "" : "display: hidden";
 		this.lastMovement = null;
 
 		this.player = {x: 0, y: 0, size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, life: 100, armor: 0, velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, damage: 20, attackSpeed: 0.1};
