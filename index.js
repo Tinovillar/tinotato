@@ -23,14 +23,13 @@ class Game {
 		this.canvas.width = window.innerWidth;
 
 		this.keys = new Set();
-		//this.joystick = nipplejs.create({
-	    //    zone: document.getElementById('static'),
-		//	mode: 'static',
-		//	position: {left: '50%', top: '50%'},
-		//	size: 50,
-	    //    color: 'blue'
-	    //});
-		this.lastMovement = null;
+		this.joystick = nipplejs.create({
+	        zone: document.getElementById('static'),
+			mode: 'static',
+			position: {left: '50%', top: '50%'},
+			size: 50,
+	        color: 'blue'
+	    });
 
 		this.player = {x: 0, y: 0, size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, life: 100, armor: 0, velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, damage: 20, attackSpeed: 0.1};
 		this.shoots = [];
@@ -64,27 +63,31 @@ class Game {
 		window.addEventListener("keyup", e => {
 			this.keys.delete(e.key);
 		});
-		document.getElementById("static").addEventListener('touchstart', function(event) {
-		    this.lastMovement = event.touches[0];
+		this.joystick.on('move', (event, data) => {
+			if(data.direction) {
+				switch(data.direction.angle) {
+					case "left":
+						this.lastMovement = 'a';
+						this.keys.add(this.lastMovement);
+						break;
+					case "right":
+						this.lastMovement = 'd';
+						this.keys.add(this.lastMovement);
+						break;
+					case "up":
+						this.lastMovement = 'w';
+						this.keys.add(this.lastMovement);
+						break;
+					case "down":
+						this.lastMovement = 's';
+						this.keys.add(this.lastMovement);
+						break;
+				}
+			}
+		});
+		this.joystick.on('end', () => {
 			this.keys.clear();
-		}, false);
-
-		document.getElementById("static").addEventListener('touchmove', function(event) {
-		    if (!startTouch) return;
-		    let endTouch = event.touches[0];
-		    let deltaX = endTouch.pageX - this.lastMovement.pageX;
-		    let deltaY = endTouch.pageY - this.lastMovement.pageY;
-
-		    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-		        if (deltaX > 0) this.keys.add('d');
-		        else this.keys.add('a');
-		    } else {
-		        if (deltaY > 0) this.keys.add('s');
-		        else this.keys.add('w');
-		    }
-
-		    event.preventDefault();
-		}, false);
+		})
 	}
 	restart() {
 		this.enemies = [];
