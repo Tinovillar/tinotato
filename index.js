@@ -6,6 +6,13 @@ class Game {
 		this.canvas.width = window.innerWidth;
 
 		this.keys = new Set();
+		this.joystick = nipplejs.create({
+	        zone: document.getElementById('dynamic'),
+			mode: 'dynamic',
+			size: 100,
+	        color: 'blue'
+	    });
+		this.lastMovement = null;
 
 		this.player = {x: 0, y: 0, life: 100, armor: 0, velocity: 5, damage: 20, attackSpeed: 0.1};
 		this.shoots = [];
@@ -38,6 +45,31 @@ class Game {
 		});
 		window.addEventListener("keyup", e => {
 			this.keys.delete(e.key);
+		});
+		this.joystick.on('move', (event, data) => {
+			if(data.direction) {
+				switch(data.direction.angle) {
+					case "left":
+						this.lastMovement = 'a';
+						this.keys.add(this.lastMovement);
+						break;
+					case "right":
+						this.lastMovement = 'd';
+						this.keys.add(this.lastMovement);
+						break;
+					case "up":
+						this.lastMovement = 'w';
+						this.keys.add(this.lastMovement);
+						break;
+					case "down":
+						this.lastMovement = 's';
+						this.keys.add(this.lastMovement);
+						break;
+				}
+			}
+		});
+		this.joystick.on('end', (event, data) => {
+			this.keys.clear();
 		});
 	}
 	restart() {
