@@ -30,7 +30,6 @@ class Game {
 			size: 50,
 	        color: 'blue'
 	    });
-		document.getElementById('static').style += isMobile ? "" : "display: hidden";
 		this.lastMovement = null;
 
 		this.player = {x: 0, y: 0, size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, life: 100, armor: 0, velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, damage: 20, attackSpeed: 0.1};
