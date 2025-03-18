@@ -27,7 +27,7 @@ class Game {
 	        zone: document.getElementById('static'),
 			mode: 'static',
 			position: {left: '50%', top: '50%'},
-			size: 50,
+			size: 100,
 	        color: 'blue'
 	    });
 
@@ -88,6 +88,9 @@ class Game {
 		this.joystick.on('end', () => {
 			this.keys.clear();
 		})
+		document.querySelector("body").addEventListener('contextmenu', function(event) {
+		    event.preventDefault();
+		});
 	}
 	restart() {
 		this.enemies = [];
