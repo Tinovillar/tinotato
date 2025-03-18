@@ -31,14 +31,16 @@ class Game {
 	        color: 'blue'
 	    });
 
-		this.player = {x: 0, y: 0, size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, life: 100, armor: 0, velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, damage: 20, attackSpeed: 0.1};
+		this.points = 0;
+
+		this.player = {x: window.innerWidth / 2, y: window.innerHeight / 2, size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, life: 100, armor: 0, velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, damage: 20, attackSpeed: 0.1};
 		this.shoots = [];
 		this.shootTimer = 0;
 		this.shootCooldown = isMobile() ? PLAYER_MOBILE_ATTACKSPEED : PLAYER_ATTACKSPEED; // 500ms
 
 		this.enemies = [];
 		this.enemyTimer = 0;
-		this.enemyCooldown = isMobile() ? ENEMY_MOBILE_SPAWNRATE : ENEMY_SPAWNRATE; // 100ms
+		this.enemyCooldown = isMobile() ? ENEMY_MOBILE_SPAWNRATE : ENEMY_SPAWNRATE;
 		this.maxEnemies = 30;
 
 		this.wave = 1;
@@ -95,6 +97,8 @@ class Game {
 	restart() {
 		this.enemies = [];
 		this.enemyTimer = 0;
+		this.enemyCooldown = isMobile() ? ENEMY_MOBILE_SPAWNRATE : ENEMY_SPAWNRATE;
+		this.maxEnemies = 30;
 
 		this.shoots = [];
 		this.shootTimer = 0;
@@ -103,12 +107,27 @@ class Game {
 		this.timeElapsed = 0;
 
 		this.player.life = 100;
+		this.player.x = window.innerWidth / 2;
+		this.player.y = window.innerHeight / 2;
 		this.wave = 1;
 	}
 	nextWave() {
-		let lastWave = this.wave;
-		this.restart();
-		this.wave = lastWave + 1;
+		this.enemies = [];
+		this.enemyTimer = 0;
+		this.enemyCooldown *= 0.9;
+		this.maxEnemies *= 1.2;
+
+		this.shoots = [];
+		this.shootTimer = 0;
+
+		this.timer = 0;
+		this.timeElapsed = 0;
+
+		this.player.life = 100;
+		this.player.x = window.innerWidth / 2;
+		this.player.y = window.innerHeight / 2;
+
+		this.wave += 1;
 	}
 	gameLoop(timestamp) {
 		if(!this.isRunning) return;
@@ -174,6 +193,7 @@ class Game {
 				this.player.life -= 5;
 				if(this.player.life <= 0) {
 					this.restart();
+					this.points = 0;
 				}
 			} else {
 				let moveX = dx / distance;
@@ -204,8 +224,9 @@ class Game {
 			if(distance < 15) {
 				this.shoots = this.shoots.filter(s => s !== shoot);
 				shoot.target.life -= 25;
-				if(shoot.target.life <= 0) {
+				if(shoot.target.life <= 0 && this.enemies.includes(shoot.target)) {
 					this.enemies = this.enemies.filter(e => e !== shoot.target);
+					this.points++;
 				}
 			} else {
 				let moveX = dx / distance;
@@ -221,6 +242,11 @@ class Game {
 		// Render screen
 		this.ctx.fillStyle = 'black';
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		// Render wave count
+		this.ctx.fillStyle = 'white';
+		this.ctx.font = "bold 50px Arial";
+        this.ctx.textAlign = 'center';
+		this.ctx.fillText("Wave " + this.wave, this.canvas.width / 2, 100);
 		// Render paused screen
 		if (this.paused) {
             this.ctx.fillStyle = 'white';
@@ -232,11 +258,10 @@ class Game {
 			this.ctx.font = "bold 50px Arial";
 			this.ctx.fillText(this.timeElapsed + " s", this.canvas.width/2, this.canvas.height/2);
 		}
-		// Render wave
+		// Render points
 		this.ctx.fillStyle = 'white';
-		this.ctx.font = "bold 50px Arial";
-        this.ctx.textAlign = 'center';
-		this.ctx.fillText("Wave " + this.wave, this.canvas.width/2, 100);
+		this.ctx.font = "bold 25px Arial";
+		this.ctx.fillText("Points: " + this.points, this.canvas.width / 2, 100 + 30);
 		// Render player
 		this.ctx.fillStyle = 'green';
 		this.ctx.fillRect(this.player.x, this.player.y, this.player.size, this.player.size);
