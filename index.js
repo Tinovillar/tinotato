@@ -88,7 +88,7 @@ class Game {
 		this.joystick.on('end', () => {
 			this.keys.clear();
 		})
-		document.querySelector("body").addEventListener('contextmenu', function(event) {
+		document.addEventListener('contextmenu', function(event) {
 		    event.preventDefault();
 		});
 	}
