@@ -4,6 +4,7 @@ const PLAYER_MOBILE_ATTACKSPEED = 0.2;
 const PLAYER_ATTACKSPEED = 0.1;
 const PLAYER_SIZE = 30;
 const PLAYER_VELOCITY = 5;
+const PLAYER_DAMAGE = 20;
 const ENEMY_MOBILE_VELOCITY = 2;
 const ENEMY_MOBILE_SIZE = 17;
 const ENEMY_MOBILE_SPAWNRATE = 0.8;
@@ -33,7 +34,17 @@ class Game {
 
 		this.points = 0;
 
-		this.player = {x: window.innerWidth / 2, y: window.innerHeight / 2, size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, life: 100, armor: 0, velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, damage: 20, attackSpeed: 0.1};
+		this.player = {
+			x: window.innerWidth / 2, 
+			y: window.innerHeight / 2, 
+			size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, 
+			life: 100, 
+			armor: 0, 
+			velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, 
+			damage: PLAYER_DAMAGE, 
+			attackSpeed: 0.1
+		};
+
 		this.shoots = [];
 		this.shootTimer = 0;
 		this.shootCooldown = isMobile() ? PLAYER_MOBILE_ATTACKSPEED : PLAYER_ATTACKSPEED; // 500ms
