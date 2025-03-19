@@ -11,6 +11,7 @@ const ENEMY_MOBILE_SPAWNRATE = 0.8;
 const ENEMY_SPAWNRATE = 0.5;
 const ENEMY_SIZE = 25;
 const ENEMY_VELOCITY = 3;
+const PAUSED = 'paused', PLAYING = 'playing', UPGRADING = 'upgrading';
 
 function isMobile() {
 	return window.innerWidth <= 800;
@@ -42,7 +43,8 @@ class Game {
 			armor: 0, 
 			velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, 
 			damage: PLAYER_DAMAGE, 
-			attackSpeed: 0.1
+			attackSpeed: 0.1, 
+			range: 300
 		};
 
 		this.shoots = [];
@@ -56,8 +58,7 @@ class Game {
 
 		this.wave = 1;
 
-		this.paused = false; // Paused
-		this.isRunning = false; // Playing, upgrading
+		this.state = PLAYING; // Paused, Playing, Upgrading
 		this.lastTime = 0;
 
 		this.timer = 0;
@@ -71,7 +72,7 @@ class Game {
 		window.addEventListener("keydown", e => {
 			this.keys.add(e.key);
 			if(e.key == 'p')
-				this.paused = !this.paused;
+				this.state = this.state == PAUSED ? PLAYING : PAUSED;
 		});
 		window.addEventListener("keyup", e => {
 			this.keys.delete(e.key);
@@ -139,6 +140,7 @@ class Game {
 		this.player.y = window.innerHeight / 2;
 
 		this.wave += 1;
+		this.state = UPGRADING;
 	}
 	gameLoop(timestamp) {
 		if(!this.isRunning) return;
@@ -163,8 +165,8 @@ class Game {
 		}
 	}
 	update(deltatime) {
-		// Pause game
-		if(this.paused) return;
+		// Check if is not playing
+		if(this.state != PLAYING) return;
 		// Update timer
 		this.timer += deltatime;
 		if(this.timer >= 1) {
@@ -220,7 +222,7 @@ class Game {
 		});
 		// Shot to enemies
 		this.shootTimer += deltatime;
-		if(this.enemies.length > 0 && this.shootTimer >= this.shootCooldown && this.enemies[0].distance < 400) {
+		if(this.enemies.length > 0 && this.shootTimer >= this.shootCooldown && this.enemies[0].distance < this.player.range) {
 			this.shoots.push({x: this.player.x, y: this.player.y, target: this.enemies[0]});
 			this.shootTimer = 0;
 		}
@@ -258,37 +260,40 @@ class Game {
 		this.ctx.font = "bold 50px Arial";
         this.ctx.textAlign = 'center';
 		this.ctx.fillText("Wave " + this.wave, this.canvas.width / 2, 100);
-		// Render paused screen
-		if (this.paused) {
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = 'bold 100px Arial';
-            this.ctx.fillText('Paused', this.canvas.width / 2, this.canvas.height / 2);
-        } else {
-			// Render timer
-			this.ctx.fillStyle = 'white';
-			this.ctx.font = "bold 50px Arial";
-			this.ctx.fillText(this.timeElapsed + " s", this.canvas.width/2, this.canvas.height/2);
-		}
 		// Render points
 		this.ctx.fillStyle = 'white';
 		this.ctx.font = "bold 25px Arial";
 		this.ctx.fillText("Points: " + this.points, this.canvas.width / 2, 100 + 30);
-		// Render player
-		this.ctx.fillStyle = 'green';
-		this.ctx.fillRect(this.player.x, this.player.y, this.player.size, this.player.size);
-		this.ctx.fillStyle = 'orange';
-		this.ctx.fillRect(this.player.x, this.player.y - 5, (this.player.life / 100) * this.player.size, 5);
-		// Render enemies
-		for(const enemy of this.enemies) {
-			this.ctx.fillStyle = "blue";
-			this.ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+		// Render paused screen
+		if (this.state === PAUSED) {
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 100px Arial';
+            this.ctx.fillText('Paused', this.canvas.width / 2, this.canvas.height / 2);
+        } else if(this.state === PLAYING){
+			// Render timer
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 50px Arial";
+			this.ctx.fillText(this.timeElapsed + " s", this.canvas.width/2, this.canvas.height/2);
+			// Render player
+			this.ctx.fillStyle = 'green';
+			this.ctx.fillRect(this.player.x, this.player.y, this.player.size, this.player.size);
 			this.ctx.fillStyle = 'orange';
-			this.ctx.fillRect(enemy.x, enemy.y - 5, (enemy.life / 100) * enemy.size, 5);
-		}
-		// Render shoots
-		for(const shoot of this.shoots) {
-			this.ctx.fillStyle = 'red';
-			this.ctx.fillRect(shoot.x, shoot.y, 10, 10);
+			this.ctx.fillRect(this.player.x, this.player.y - 5, (this.player.life / 100) * this.player.size, 5);
+			// Render enemies
+			for(const enemy of this.enemies) {
+				this.ctx.fillStyle = "blue";
+				this.ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+				this.ctx.fillStyle = 'orange';
+				this.ctx.fillRect(enemy.x, enemy.y - 5, (enemy.life / 100) * enemy.size, 5);
+			}
+			// Render shoots
+			for(const shoot of this.shoots) {
+				this.ctx.fillStyle = 'red';
+				this.ctx.fillRect(shoot.x, shoot.y, 10, 10);
+			}
+		} else if(this.state === UPGRADING) {
+			// Render upgrading
+			this.state = PLAYING;
 		}
 	}
 	stop() {
