@@ -71,7 +71,12 @@ class Game {
 		console.log("Initialize entities");
 		window.addEventListener("keydown", e => {
 			this.keys.add(e.key);
-			if(e.key == 'p')
+			if(this.state == UPGRADING) {
+				if(e.key == '1') {
+					this.player.attackSpeed *= 0.8;
+					this.state = PLAYING;
+				}
+			} else if(e.key == 'p')
 				this.state = this.state == PAUSED ? PLAYING : PAUSED;
 		});
 		window.addEventListener("keyup", e => {
@@ -222,7 +227,7 @@ class Game {
 		});
 		// Shot to enemies
 		this.shootTimer += deltatime;
-		if(this.enemies.length > 0 && this.shootTimer >= this.shootCooldown && this.enemies[0].distance < this.player.range) {
+		if(this.enemies.length > 0 && this.shootTimer >= this.player.attackSpeed && this.enemies[0].distance < this.player.range) {
 			this.shoots.push({x: this.player.x, y: this.player.y, target: this.enemies[0]});
 			this.shootTimer = 0;
 		}
@@ -277,8 +282,13 @@ class Game {
 			// Render player
 			this.ctx.fillStyle = 'green';
 			this.ctx.fillRect(this.player.x, this.player.y, this.player.size, this.player.size);
-			this.ctx.fillStyle = 'orange';
-			this.ctx.fillRect(this.player.x, this.player.y - 5, (this.player.life / 100) * this.player.size, 5);
+			// Render player life
+			this.ctx.fillStyle = 'green';
+			this.ctx.fillRect(50, 50, (this.player.life / 100) * 200, 50);
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 25px Arial";
+			this.ctx.fillText(this.player.life / 100 * 100 + "%", 150, 85);
+			// Render player stats
 			// Render enemies
 			for(const enemy of this.enemies) {
 				this.ctx.fillStyle = "blue";
@@ -292,8 +302,23 @@ class Game {
 				this.ctx.fillRect(shoot.x, shoot.y, 10, 10);
 			}
 		} else if(this.state === UPGRADING) {
-			// Render upgrading
-			this.state = PLAYING;
+			// Render Upgrading screen
+			this.ctx.globalAlpha = 0.8;
+			this.ctx.fillStyle = "black"
+			this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+			this.ctx.globalAlpha = 1.0;
+			// Render Upgrading title
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 50px Arial";
+			this.ctx.fillText("Upgrade...", this.canvas.width/2, 250);
+			// Render Upgrading options
+			this.ctx.font = "20px Arial";
+			this.ctx.fillText("1. Attack Speed", this.canvas.width/2, 350);
+			this.ctx.fillText("2. Damage", this.canvas.width/2, 400);
+			this.ctx.fillText("3. Life", this.canvas.width/2, 450);
+			this.ctx.fillText("4. Speed", this.canvas.width/2, 500);
+			this.ctx.fillText("5. Range", this.canvas.width/2, 550);
+			// Option 1..7 (life, regeneration, speed, attackspeed, damage, armor, range)
 		}
 	}
 	stop() {
