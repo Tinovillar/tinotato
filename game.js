@@ -25,10 +25,10 @@ class Game {
 
 		this.keys = new Set();
 		this.joystick = nipplejs.create({
-	        zone: document.getElementById('static'),
-			mode: 'static',
-			position: {left: '50%', top: '50%'},
-			size: 100,
+	        zone: document.getElementById('static'), 
+			mode: 'static', 
+			position: {left: '50%', top: '50%'}, 
+			size: 100, 
 	        color: 'blue'
 	    });
 
@@ -56,8 +56,8 @@ class Game {
 
 		this.wave = 1;
 
-		this.paused = false;
-		this.isRunning = false;
+		this.paused = false; // Paused
+		this.isRunning = false; // Playing, upgrading
 		this.lastTime = 0;
 
 		this.timer = 0;
