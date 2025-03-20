@@ -1,12 +1,19 @@
-const PLAYER_ATTACKSPEED = 0.1;
+const PLAYER_ATTACKSPEED = 2;
 const PLAYER_SIZE = 30;
-const PLAYER_VELOCITY = 5;
+const PLAYER_VELOCITY = 4;
 const PLAYER_DAMAGE = 20;
 const ENEMY_SPAWNRATE = 0.5;
+const ENEMY_ATTACKSPEED = 4;
 const ENEMY_SIZE = 25;
 const ENEMY_VELOCITY = 3;
 const ENEMY_DAMAGE = 5;
+const ENEMY_MAX = 50;
+const WAVE_DURATION = 20;
 const PAUSED = 'paused', PLAYING = 'playing', UPGRADING = 'upgrading';
+
+function keep_n_decimals(num, decimals) {
+	return (Math.round(num * 100) / 100).toFixed(decimals);
+}
 
 class Game {
 	constructor() {
@@ -24,6 +31,7 @@ class Game {
 			y: window.innerHeight / 2, 
 			size: PLAYER_SIZE, 
 			life: 100, 
+			maxLife: 100,
 			armor: 0, 
 			velocity: PLAYER_VELOCITY, 
 			damage: PLAYER_DAMAGE, 
@@ -32,13 +40,10 @@ class Game {
 		};
 
 		this.shoots = [];
-		this.shootTimer = 0;
-		this.shootCooldown = PLAYER_ATTACKSPEED; // 500ms
 
 		this.enemies = [];
-		this.enemyTimer = 0;
+		this.maxEnemies = ENEMY_MAX;
 		this.enemyCooldown = ENEMY_SPAWNRATE;
-		this.maxEnemies = 30;
 
 		this.wave = 1;
 
@@ -47,7 +52,9 @@ class Game {
 
 		this.timer = 0;
 		this.timeElapsed = 0;
-		this.timeLimit = 20;
+
+		this.totalTime = 0;
+		this.startTime = 0;
 
 		this.gameLoop = this.gameLoop.bind(this);
 	}
@@ -57,7 +64,7 @@ class Game {
 			this.keys.add(e.key);
 			if(this.state == UPGRADING) {
 				if(e.key == '1') {
-					this.player.attackSpeed *= 0.8;
+					this.player.attackSpeed *= 1.1;
 					this.state = PLAYING;
 				}
 				if(e.key == '2') {
@@ -65,7 +72,8 @@ class Game {
 					this.state = PLAYING;
 				}
 				if(e.key == '3') {
-					this.player.life = Math.round(this.player.life * 1.1);
+					this.player.maxLife = Math.round(this.player.maxLife * 1.1);
+					this.player.life = this.player.maxLife;
 					this.state = PLAYING;
 				}
 				if(e.key == '4') {
@@ -88,21 +96,23 @@ class Game {
 	}
 	restart() {
 		this.enemies = [];
-		this.enemyTimer = 0;
 		this.enemyCooldown = ENEMY_SPAWNRATE;
 		this.maxEnemies = 30;
 
 		this.shoots = [];
-		this.shootTimer = 0;
 
 		this.timer = 0;
 		this.timeElapsed = 0;
+
+		this.startTime = this.lastTime / 1000;
+		this.totalTime = -1;
 
 		this.player = {
 			x: window.innerWidth / 2, 
 			y: window.innerHeight / 2, 
 			size: PLAYER_SIZE, 
 			life: 100, 
+			maxLife: 100,
 			armor: 0, 
 			velocity: PLAYER_VELOCITY, 
 			damage: PLAYER_DAMAGE, 
@@ -113,17 +123,18 @@ class Game {
 	}
 	nextWave() {
 		this.enemies = [];
-		this.enemyTimer = 0;
-		this.enemyCooldown *= 0.9;
+		this.enemyCooldown *= 1.4;
 		this.maxEnemies *= 1.2;
 
 		this.shoots = [];
-		this.shootTimer = 0;
 
 		this.timer = 0;
 		this.timeElapsed = 0;
 
-		this.player.life = 100;
+		this.startTime = this.lastTime / 1000;
+		this.totalTime = -1;
+
+		this.player.life = this.player.maxLife;
 		this.player.x = window.innerWidth / 2;
 		this.player.y = window.innerHeight / 2;
 
@@ -135,6 +146,7 @@ class Game {
 
 		const deltaTime = (timestamp - this.lastTime) / 1000; // Convert to seconds
         this.lastTime = timestamp;
+		this.totalTime += deltaTime;
 
         this.update(deltaTime);
         this.render();
@@ -148,6 +160,8 @@ class Game {
 			this.isRunning = true;
 			this.init();
 			this.lastTime = performance.now();
+			this.startTime = this.lastTime / 1000;
+			this.totalTime = -1; // Initial delay
 			requestAnimationFrame(this.gameLoop);
 			console.log("Started...");
 		}
@@ -162,7 +176,7 @@ class Game {
 			this.timer = 0;
 		}
 		// Check if round would be finished
-		if(this.timer === 0 && this.timeElapsed === this.timeLimit) {
+		if(this.timer === 0 && this.timeElapsed === WAVE_DURATION) {
 			this.nextWave();
 		}
 		// Update player position
@@ -177,17 +191,17 @@ class Game {
 				this.player.y += this.player.velocity;
 		}
 		// Spawn enemies
-		this.enemyTimer += deltatime;
-		if(this.enemies.length <= this.maxEnemies && this.enemyTimer >= this.enemyCooldown) {
+		if(this.enemies.length <= this.maxEnemies && Math.floor(this.totalTime / (1 / this.enemyCooldown)) > Math.floor((this.totalTime - deltatime) / (1 / this.enemyCooldown))) {
 			this.enemies.push({ 
 				x: Math.random() * this.canvas.width, 
 				y: Math.random() * this.canvas.height, 
 				damage: ENEMY_DAMAGE, 
+				attackSpeed: ENEMY_ATTACKSPEED, 
 				velocity: ENEMY_VELOCITY, 
 				size: ENEMY_SIZE, 
-				life: 100
+				life: 100, 
+				maxLife: 100
 			});
-			this.enemyTimer = 0;
 		}
 		// Update enemies position
 		for(let enemy of this.enemies) {
@@ -197,7 +211,7 @@ class Game {
 			dx = this.player.x - enemy.x;
 			dy = this.player.y - enemy.y;
 			distance = Math.sqrt(dx * dx + dy * dy);
-			if(distance <= this.player.size) {
+			if(distance <= this.player.size && Math.floor(this.totalTime / (1 / enemy.attackSpeed)) > Math.floor((this.totalTime - deltatime) / (1 / enemy.attackSpeed))) {
 				this.player.life -= enemy.damage;
 				if(this.player.life <= 0) {
 					this.restart();
@@ -216,10 +230,12 @@ class Game {
 			return a.distance - b.distance;
 		});
 		// Shot to enemies
-		this.shootTimer += deltatime;
-		if(this.enemies.length > 0 && this.shootTimer >= this.player.attackSpeed && this.enemies[0].distance < this.player.range) {
-			this.shoots.push({x: this.player.x, y: this.player.y, target: this.enemies[0]});
-			this.shootTimer = 0;
+		if(this.enemies.length > 0 && Math.floor(this.totalTime / (1/this.player.attackSpeed)) > Math.floor((this.totalTime - deltatime) / (1/this.player.attackSpeed)) && this.enemies[0].distance < this.player.range) {
+			this.shoots.push({
+				x: this.player.x, 
+				y: this.player.y, 
+				target: this.enemies[0]
+			});
 		}
 		// Update shoots positions
 		for(let shoot of this.shoots) {
@@ -229,9 +245,9 @@ class Game {
 			dx = shoot.target.x - shoot.x;
 			dy = shoot.target.y - shoot.y;
 			distance = Math.sqrt(dx * dx + dy * dy);
-			if(distance < 15) {
+			if(distance < ENEMY_SIZE) {
 				this.shoots = this.shoots.filter(s => s !== shoot);
-				shoot.target.life -= 25;
+				shoot.target.life -= this.player.damage;
 				if(shoot.target.life <= 0 && this.enemies.includes(shoot.target)) {
 					this.enemies = this.enemies.filter(e => e !== shoot.target);
 					this.points++;
@@ -268,7 +284,7 @@ class Game {
 			// Render timer
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 50px Arial";
-			this.ctx.fillText(this.timeElapsed + " s", this.canvas.width/2, this.canvas.height/2);
+			this.ctx.fillText(WAVE_DURATION - this.timeElapsed + " s", this.canvas.width/2, this.canvas.height/2);
 			// Render player
 			this.ctx.fillStyle = 'green';
 			this.ctx.fillRect(this.player.x, this.player.y, this.player.size, this.player.size);
@@ -277,23 +293,23 @@ class Game {
 			this.ctx.fillRect(50, 50, (this.player.life / 100) * 200, 50);
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 25px Arial";
-			this.ctx.fillText(this.player.life, 150, 85);
+			this.ctx.fillText(`${this.player.life}/${this.player.maxLife}`, 150, 85);
 			// Render player attack speed
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 15px Arial";
-			this.ctx.fillText("Attack speed: " + this.player.attackSpeed, 150, 120);
+			this.ctx.fillText("Attack speed: " + keep_n_decimals(this.player.attackSpeed, 2), 150, 120);
 			// Render player damage
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 15px Arial";
-			this.ctx.fillText("Damage: " + this.player.damage, 150, 140);
-			// Render player attack speed
+			this.ctx.fillText("Damage: " + keep_n_decimals(this.player.damage, 2), 150, 140);
+			// Render player speed
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 15px Arial";
-			this.ctx.fillText("Speed: " + this.player.velocity, 150, 160);
-			// Render player attack speed
+			this.ctx.fillText("Speed: " + keep_n_decimals(this.player.velocity, 2), 150, 160);
+			// Render player range
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 15px Arial";
-			this.ctx.fillText("Range: " + this.player.range, 150, 180);
+			this.ctx.fillText("Range: " + keep_n_decimals(this.player.range, 2), 150, 180);
 			// Render enemies
 			for(const enemy of this.enemies) {
 				this.ctx.fillStyle = "blue";
@@ -318,11 +334,11 @@ class Game {
 			this.ctx.fillText("Upgrade...", this.canvas.width/2, 250);
 			// Render Upgrading options
 			this.ctx.font = "20px Arial";
-			this.ctx.fillText("1. Attack Speed", this.canvas.width/2, 350);
-			this.ctx.fillText("2. Damage", this.canvas.width/2, 400);
-			this.ctx.fillText("3. Life", this.canvas.width/2, 450);
-			this.ctx.fillText("4. Speed", this.canvas.width/2, 500);
-			this.ctx.fillText("5. Range", this.canvas.width/2, 550);
+			this.ctx.fillText("1. Attack Speed" + " (+10%)", this.canvas.width/2, 350);
+			this.ctx.fillText("2. Damage" + " (+10%)", this.canvas.width/2, 400);
+			this.ctx.fillText("3. Life" + " (+10%)", this.canvas.width/2, 450);
+			this.ctx.fillText("4. Speed" + " (+5%)", this.canvas.width/2, 500);
+			this.ctx.fillText("5. Range" + " (+10%)", this.canvas.width/2, 550);
 			// Option 1..7 (life, regeneration, speed, attackspeed, damage, armor, range)
 		}
 	}
