@@ -1,21 +1,12 @@
-const PLAYER_MOBILE_VELOCITY = 3.5;
-const PLAYER_MOBILE_SIZE = 20;
-const PLAYER_MOBILE_ATTACKSPEED = 0.2;
 const PLAYER_ATTACKSPEED = 0.1;
 const PLAYER_SIZE = 30;
 const PLAYER_VELOCITY = 5;
 const PLAYER_DAMAGE = 20;
-const ENEMY_MOBILE_VELOCITY = 2;
-const ENEMY_MOBILE_SIZE = 17;
-const ENEMY_MOBILE_SPAWNRATE = 1.5;
 const ENEMY_SPAWNRATE = 0.5;
 const ENEMY_SIZE = 25;
 const ENEMY_VELOCITY = 3;
+const ENEMY_DAMAGE = 5;
 const PAUSED = 'paused', PLAYING = 'playing', UPGRADING = 'upgrading';
-
-function isMobile() {
-	return window.innerWidth <= 800;
-}
 
 class Game {
 	constructor() {
@@ -25,35 +16,28 @@ class Game {
 		this.canvas.width = window.innerWidth;
 
 		this.keys = new Set();
-		this.joystick = nipplejs.create({
-	        zone: document.getElementById('static'), 
-			mode: 'static', 
-			position: {left: '50%', top: '50%'}, 
-			size: 100, 
-	        color: 'blue'
-	    });
 
 		this.points = 0;
 
 		this.player = {
 			x: window.innerWidth / 2, 
 			y: window.innerHeight / 2, 
-			size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, 
+			size: PLAYER_SIZE, 
 			life: 100, 
 			armor: 0, 
-			velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, 
+			velocity: PLAYER_VELOCITY, 
 			damage: PLAYER_DAMAGE, 
-			attackSpeed: 0.1, 
+			attackSpeed: PLAYER_ATTACKSPEED, 
 			range: 300
 		};
 
 		this.shoots = [];
 		this.shootTimer = 0;
-		this.shootCooldown = isMobile() ? PLAYER_MOBILE_ATTACKSPEED : PLAYER_ATTACKSPEED; // 500ms
+		this.shootCooldown = PLAYER_ATTACKSPEED; // 500ms
 
 		this.enemies = [];
 		this.enemyTimer = 0;
-		this.enemyCooldown = isMobile() ? ENEMY_MOBILE_SPAWNRATE : ENEMY_SPAWNRATE;
+		this.enemyCooldown = ENEMY_SPAWNRATE;
 		this.maxEnemies = 30;
 
 		this.wave = 1;
@@ -98,31 +82,6 @@ class Game {
 		window.addEventListener("keyup", e => {
 			this.keys.delete(e.key);
 		});
-		this.joystick.on('move', (event, data) => {
-			if(data.direction) {
-				switch(data.direction.angle) {
-					case "left":
-						this.lastMovement = 'a';
-						this.keys.add(this.lastMovement);
-						break;
-					case "right":
-						this.lastMovement = 'd';
-						this.keys.add(this.lastMovement);
-						break;
-					case "up":
-						this.lastMovement = 'w';
-						this.keys.add(this.lastMovement);
-						break;
-					case "down":
-						this.lastMovement = 's';
-						this.keys.add(this.lastMovement);
-						break;
-				}
-			}
-		});
-		this.joystick.on('end', () => {
-			this.keys.clear();
-		})
 		document.addEventListener('contextmenu', function(event) {
 		    event.preventDefault();
 		});
@@ -130,7 +89,7 @@ class Game {
 	restart() {
 		this.enemies = [];
 		this.enemyTimer = 0;
-		this.enemyCooldown = isMobile() ? ENEMY_MOBILE_SPAWNRATE : ENEMY_SPAWNRATE;
+		this.enemyCooldown = ENEMY_SPAWNRATE;
 		this.maxEnemies = 30;
 
 		this.shoots = [];
@@ -142,12 +101,12 @@ class Game {
 		this.player = {
 			x: window.innerWidth / 2, 
 			y: window.innerHeight / 2, 
-			size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, 
+			size: PLAYER_SIZE, 
 			life: 100, 
 			armor: 0, 
-			velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, 
+			velocity: PLAYER_VELOCITY, 
 			damage: PLAYER_DAMAGE, 
-			attackSpeed: 0.1, 
+			attackSpeed: PLAYER_ATTACKSPEED, 
 			range: 300
 		};
 		this.wave = 1;
@@ -220,7 +179,14 @@ class Game {
 		// Spawn enemies
 		this.enemyTimer += deltatime;
 		if(this.enemies.length <= this.maxEnemies && this.enemyTimer >= this.enemyCooldown) {
-			this.enemies.push({x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, velocity: isMobile() ? ENEMY_MOBILE_VELOCITY : ENEMY_VELOCITY, size: isMobile() ? ENEMY_MOBILE_SIZE : ENEMY_SIZE, life: 100});
+			this.enemies.push({ 
+				x: Math.random() * this.canvas.width, 
+				y: Math.random() * this.canvas.height, 
+				damage: ENEMY_DAMAGE, 
+				velocity: ENEMY_VELOCITY, 
+				size: ENEMY_SIZE, 
+				life: 100
+			});
 			this.enemyTimer = 0;
 		}
 		// Update enemies position
@@ -232,7 +198,7 @@ class Game {
 			dy = this.player.y - enemy.y;
 			distance = Math.sqrt(dx * dx + dy * dy);
 			if(distance <= this.player.size) {
-				this.player.life -= 5;
+				this.player.life -= enemy.damage;
 				if(this.player.life <= 0) {
 					this.restart();
 					this.points = 0;
