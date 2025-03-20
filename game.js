@@ -139,9 +139,17 @@ class Game {
 		this.timer = 0;
 		this.timeElapsed = 0;
 
-		this.player.life = 100;
-		this.player.x = window.innerWidth / 2;
-		this.player.y = window.innerHeight / 2;
+		this.player = {
+			x: window.innerWidth / 2, 
+			y: window.innerHeight / 2, 
+			size: isMobile() ? PLAYER_MOBILE_SIZE : PLAYER_SIZE, 
+			life: 100, 
+			armor: 0, 
+			velocity: isMobile() ? PLAYER_MOBILE_VELOCITY : PLAYER_VELOCITY, 
+			damage: PLAYER_DAMAGE, 
+			attackSpeed: 0.1, 
+			range: 300
+		};
 		this.wave = 1;
 	}
 	nextWave() {
