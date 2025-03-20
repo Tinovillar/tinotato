@@ -7,7 +7,7 @@ const PLAYER_VELOCITY = 5;
 const PLAYER_DAMAGE = 20;
 const ENEMY_MOBILE_VELOCITY = 2;
 const ENEMY_MOBILE_SIZE = 17;
-const ENEMY_MOBILE_SPAWNRATE = 0.8;
+const ENEMY_MOBILE_SPAWNRATE = 1.5;
 const ENEMY_SPAWNRATE = 0.5;
 const ENEMY_SIZE = 25;
 const ENEMY_VELOCITY = 3;
@@ -74,6 +74,22 @@ class Game {
 			if(this.state == UPGRADING) {
 				if(e.key == '1') {
 					this.player.attackSpeed *= 0.8;
+					this.state = PLAYING;
+				}
+				if(e.key == '2') {
+					this.player.damage *= 1.1;
+					this.state = PLAYING;
+				}
+				if(e.key == '3') {
+					this.player.life = Math.round(this.player.life * 1.1);
+					this.state = PLAYING;
+				}
+				if(e.key == '4') {
+					this.player.velocity *= 1.05;
+					this.state = PLAYING;
+				}
+				if(e.key == '5') {
+					this.player.range *= 1.1;
 					this.state = PLAYING;
 				}
 			} else if(e.key == 'p')
@@ -287,8 +303,23 @@ class Game {
 			this.ctx.fillRect(50, 50, (this.player.life / 100) * 200, 50);
 			this.ctx.fillStyle = 'white';
 			this.ctx.font = "bold 25px Arial";
-			this.ctx.fillText(this.player.life / 100 * 100 + "%", 150, 85);
-			// Render player stats
+			this.ctx.fillText(this.player.life, 150, 85);
+			// Render player attack speed
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 15px Arial";
+			this.ctx.fillText("Attack speed: " + this.player.attackSpeed, 150, 120);
+			// Render player damage
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 15px Arial";
+			this.ctx.fillText("Damage: " + this.player.damage, 150, 140);
+			// Render player attack speed
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 15px Arial";
+			this.ctx.fillText("Speed: " + this.player.velocity, 150, 160);
+			// Render player attack speed
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = "bold 15px Arial";
+			this.ctx.fillText("Range: " + this.player.range, 150, 180);
 			// Render enemies
 			for(const enemy of this.enemies) {
 				this.ctx.fillStyle = "blue";
