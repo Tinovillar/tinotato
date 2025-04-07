@@ -123,7 +123,7 @@ class Game {
 	}
 	nextWave() {
 		this.enemies = [];
-		this.enemyCooldown *= 1.4;
+		this.enemyCooldown *= 1.1;
 		this.maxEnemies *= 1.2;
 
 		this.shoots = [];
